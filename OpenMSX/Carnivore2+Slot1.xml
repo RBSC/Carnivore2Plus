@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+<!DOCTYPE msxconfig SYSTEM 'msxconfig2.dtd'>
+<msxconfig>
+  <info>
+    <name>Carnivore2+ Slot1</name>
+    <manufacturer>RBSC</manufacturer>
+    <code/>
+    <release_year>2024</release_year>
+    <description>Carnivore2+ is a multi-device modular MSX cartridge created by the Russian Bear Service Crew in 2024 that incorporates 1Mb of RAM with mapper, 1Mb of shadow RAM, FMPAC SRAM emulation for FMPAC firmware, disk controller with Nextor BIOS, emulated FMPAC, SFG, MSX Audio, SN7, SCC/SCC+ and PSG devices as well as 8Mb FlashROM. The cartridge uses CF and SD cards as media.</description>
+    <type>Flash cartridge</type>
+  </info>
+  <devices>
+    <primary slot="1">
+      <secondary slot="any">
+        <Carnivore2 id="Carnivore2+ Slot1">
+          <mem base="0x0000" size="0x10000"/>
+          <io base="0x3C" num="1" type="O"/>
+          <io base="0x7C" num="2" type="O"/>
+          <rom>
+          <sha1>f5edcbd63e14f2e415d30cfb2f51971ebf6855a3</sha1>
+          </rom>
+          <sramname>carnivore2+.flash</sramname>
+          <eeprom>
+            <sramname>carnivore2+.eeprom</sramname>
+          </eeprom>
+          <sound>
+            <volume>21000</volume>
+          </sound>
+          <ym2413-core>NukeYKT</ym2413-core>
+          <master>
+            <type>IDEHD</type>
+            <filename>hd.dsk</filename>
+            <size>100</size>
+          </master>
+          <!--<slave></slave>-->
+        </Carnivore2>
+      </secondary>
+    </primary>
+  </devices>
+</msxconfig>
