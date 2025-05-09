@@ -1,6 +1,6 @@
 ;
 ; Carnivore2+ Disk Tester (CF or SD)
-; Copyright (c) 2024 RBSC
+; Copyright (c) 2025 RBSC
 ; Version 3.00
 ;
 
@@ -1076,7 +1076,7 @@ CRLF:
 
 PRESENT_S:
 	db	"Carnivore2+ Disk Tester v3.00",13,10
-	db	"Copyright (c) 2024 by RBSC",13,10,13,10,"$"
+	db	"Copyright (c) 2025 by RBSC",13,10,13,10,"$"
 
 FLAGS:
 	db	"Usage:",13,10
@@ -1091,6 +1091,6 @@ FLAGS:
 BUFFER:	ds	256
 
 	db	0,0,0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
 	db	0,0,0
 

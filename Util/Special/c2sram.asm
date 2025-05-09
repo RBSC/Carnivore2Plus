@@ -1,7 +1,7 @@
 ;
 ; Carnivore2+ Cartridge's SRAM Manager
-; Copyright (c) 2024 RBSC
-; Version 3.01
+; Copyright (c) 2025 RBSC
+; Version 3.03
 ;
 
 ; !COMPILATION OPTIONS!
@@ -214,16 +214,23 @@ Stfp010:
 	jp	Exit
 
 Stfp30:
-	ld	a,(CardMDR+#38)		; Music module bits
-	and	%00000111
-	or	a			; FMPAC?
-	jr	z,Stfp31
-	print	NoFMPAC			; print warning for incompatible or uninit cartridge and exit
-	jp	Exit
-Stfp31:
         ld      a,(ERMSlt)
         ld      h,#40
         call    ENASLT
+	ld	a,(CardMDR+#38)		; Music module bits
+	and	%00000111
+	or	a			; FMPAC?
+	jr	z,Stfp300
+	print	NoFMPAC			; print "no fmpca and sram" and exit
+	jp	Exit
+Stfp300:
+	ld	a,(CardMDR+#3A)		; SRAM bits?
+	and	%00000100
+	or	a			; SRAM enabled?
+	jr	z,Stfp31
+	print	NoSRAM			; print "sram is disabled" and exit
+	jp	Exit
+Stfp31:
 	ld	a,#20			; immediate changes enabled
 	ld	(CardMDR),a
 	ld	hl,B2ON
@@ -1095,6 +1102,8 @@ CHK_L1: ld	a,(de)
     	xor	c
     	jp	p,CHK_R1		; Jump if readed bit 7 = written bit 7
     	scf
+	ld	a,#F0
+	ld	(de),a			; Return FlashROM to command mode
 CHK_R1:	pop bc
 	ret	
 
@@ -2429,8 +2438,8 @@ MD_Fail:
 
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ SRAM Manager v3.01",13,10
-	db	"(C) 2024 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ SRAM Manager v3.03",13,10
+	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
 Findcrt_S:
@@ -2444,6 +2453,10 @@ M_Wnvc:
 NoFMPAC:
 	db	10,13,"NOTE!",10,13
 	db	"This firmware doesn't support FMPAC and SRAM, so saving data from the",10,13
+	db	"shadow RAM into a file is not possible.",10,13,"$"
+NoSRAM:
+	db	10,13,"NOTE!",10,13
+	db	"FMPAC's SRAM is disabled in the configuration, so saving data from the",10,13
 	db	"shadow RAM into a file is not possible.",10,13,"$"
 
 FindcrI_S:
@@ -2480,7 +2493,7 @@ H_PAR_S:
 	db	" /r  - restart computer after up/downloading",10,13,"$"
 
 	db	0,0,0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
 	db	0,0,0
 
 BUFTOP:

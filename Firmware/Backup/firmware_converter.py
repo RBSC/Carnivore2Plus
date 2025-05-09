@@ -1,7 +1,7 @@
 import os
 import sys
 
-print ("\nCarnivore2+ Cartridge's Firmware Converter\nCopyright (c) 2024 RBSC * Version 1.00\n")
+print ("\nCarnivore2+ Cartridge's Firmware Converter\nCopyright (c) 2025 RBSC * Version 1.00\n")
 
 if not os.path.exists("Carnivore2+.pof"):
 	print ("\nFirmware file Carnivore2+.pof not found!")	

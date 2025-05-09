@@ -1,6 +1,6 @@
 ;
 ; Carnivore2+ Cartridge's CFG EEPROM Backup
-; Copyright (c) 2024 RBSC
+; Copyright (c) 2025 RBSC
 ; Version 3.00
 ;
 
@@ -2628,7 +2628,7 @@ MD_Fail:
 PRESENT_S:
 	db	3
 	db	"Carnivore2+ Configuration EEPROM Backup v3.00",13,10
-	db	"(C) 2024 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
 Findcrt_S:
@@ -2682,7 +2682,7 @@ H_PAR_S:
 	db	"There will be no overwrite warnings when /u option is used!",10,13,"$"
 
 	db	0,0,0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
 	db	0,0,0
 
 BUFTOP:

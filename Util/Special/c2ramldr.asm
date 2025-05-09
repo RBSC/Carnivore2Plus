@@ -1,7 +1,7 @@
 ;
 ; Carnivore2+ Cartridge's Shadow RAM Loader
-; Copyright (c) 2024 RBSC
-; Version 3.02
+; Copyright (c) 2025 RBSC
+; Version 3.05
 ;
 
 
@@ -142,6 +142,8 @@ PRGSTART:
 ;--- Prints the title
 PRTITLE:
 	print	PRESENT_S
+	xor	a
+	ld	(ROMLoaded),a		; ROM not loaded flag
 
 ; Command line options processing
 	ld	a,1
@@ -203,26 +205,19 @@ Stfp08:	inc	a
 	or	a
 	jr	nz,Stfp09
 
-; Find used slot
-	call	FindSlot
+	call	FindSlot		; Find used slot
 	jp	c,Exit
 	call	Testslot
-	jp	z,Stfp30
+	jp	z,CheckRAM
 
-; print warning for incompatible or uninit cartridge and exit
-	print	M_Wnvc
-	ld	c,_INNOE
-	call	DOS
+	print	M_Wnvc			; print warning for incompatible or uninit cartridge and exit
 	jp	Exit
 
-Stfp30:       	
-	ld	a,(CardMDR+#38)		; Music module bits
-	and	%00000111
-	ld	(FMPCHECK),a		; save music module type
-
+CheckRAM:
         ld      a,(ERMSlt)
         ld      h,#40
         call    ENASLT
+
 	ld	a,#20			; immediate changes enabled
 	ld	(CardMDR),a
 	ld	hl,B2ON
@@ -230,6 +225,114 @@ Stfp30:
 	ld	bc,6
 	ldir
 
+ChkRAM0:
+	xor	a
+	ld	(MaxSize+3),a
+	ld	(MaxSize+2),a
+	ld	(MaxSize+1),a
+	ld	(MaxSize),a		; Set max size to 0
+
+	ld	a,(CardMDR+#36)		; Substitute bits
+	cp	%11000010		; SD+CF-RAM?
+	jr	nz,ChkRAM1
+	print	NoRAM			; No RAM (substituted)
+	jp	Exit
+ChkRAM1:
+	ld	a,#20
+	ld	(MaxSize+2),a		; 2 megabytes
+	ld	a,(CardMDR+#3A)		; RAM bits
+	bit	0,a			; 2MB enabled for mapper?
+	jr	nz,ChkRAM11
+	ld	a,#10
+	ld	(MaxSize+2),a		; 1 megabyte
+	jr	ChkRAM2
+ChkRAM11:
+	ld	a,(CardMDR+#1E)		; Device config
+	bit	2,a			; RAM enabled?
+	jr	z,ChkRAM2
+ChkRAME:
+	print	NoShRAM			; No shadow RAM
+	jp	Exit
+ChkRAM2:
+	ld	a,(CardMDR+#38)		; Music module bits
+	and	%00000111
+	ld	(MusicM),a
+	cp	1			; SFG?
+	jr	z,ChkRAMS
+	cp	2			; MSX Audio?
+	jr	nz,ChkRAM3
+	ld	a,(CardMDR+#3A)		; RAM bits
+	bit	2,a			; SRAM enabled?
+	jr	nz,ChkRAMS
+	ld	a,(MaxSize+2)
+	dec	a
+	dec	a
+	dec	a
+	dec	a
+	ld	(MaxSize+2),a		; minus 256kb
+	jr	ChkRAMS
+ChkRAM3:
+	ld	a,(CardMDR+#3A)		; RAM bits
+	bit	2,a			; SRAM enabled?
+	jr	nz,ChkRAMS
+	ld	a,(MaxSize+2)
+	dec	a 
+	ld	(MaxSize+2),a		; minus 64kb
+ChkRAMS:
+	print	RAMAvail		; Show available RAM
+	ld	a,(MaxSize+2)
+	cp	#20			; full 2mb?
+	jr	nz,ChkRAMS1
+	print	RAM2MB			; print "2mb"
+	print	ONE_NL_S
+	jp	ChkRAME1
+ChkRAMS1:
+	cp	#10			; full 1mb?
+	jr	c,ChkRAMS2
+	jr	z,ChkRAMS11
+	print	RAM1MB			; print "1mb"
+	jr	ChkRAMS2
+ChkRAMS11:
+	print	RAM1MB			; print "1mb"
+	print	ONE_NL_S
+	jp	ChkRAME1
+ChkRAMS2:
+	ld	a,(MusicM)
+	cp	1			; SFG?
+	jr	z,ChkRAME1
+	or	a			; FMPAC?
+	jr	z,ChkRAMS3
+	print	RAM1MB1			; print "786kb"
+	jr	ChkRAMSE
+ChkRAMS3:
+	print	RAM1MB2			; print "983kb"
+ChkRAMSE:
+	print	ONE_NL_S
+	ld	a,(CardMDR+#3A)		; RAM bits
+	bit	2,a			; disabled SRAM?
+	jr	nz,ChkRAME1
+	print	NotAllRAM		; Print question
+ChkRAML:
+	call	SymbIn
+	or	%00100000
+	cp	"y"
+	jr	z,ChkRAML1
+	cp	"n"
+	jr	z,ChkRAML2
+	jr	ChkRAML
+ChkRAML1:
+	call	SymbOut
+	print	ONE_NL_S
+	ld	a,(CardMDR+#3A)		; RAM bits
+	set	2,a			; disable SRAM
+	set	4,a			; disable SRAM
+	ld	(CardMDR+#3A),a
+	jp	ChkRAM0
+ChkRAML2:
+	call	SymbOut
+	print	ONE_NL_S
+
+ChkRAME1:
 	ld	a,(p1e)
 	or	a
 	jr	z,MainM			; no file parameter
@@ -265,8 +368,12 @@ Ma01:
 
 	cp	27
 	jp	z,Exit
-	cp	"4"
+	cp	"9"			; reset with 2MB for shadow RAM
+	jp	z,RAM2Shadow
+	cp	"8"			; reset without starting ROM
 	jr	z,DoReset
+	cp	"7"			; reset with starting ROM
+	jr	z,ResetRun
 	cp	"3"
 	jp	z,D_Compr
 	cp	"0"
@@ -289,6 +396,85 @@ DoReset:
 	ld	a,#38
 	ld	(CardMDR),a
 	ld	hl,RSTCFG
+	ld	de,R1Mask
+	ld	bc,26
+	ldir
+
+	in	a,(#F4)			; read from F4 port on MSX2+
+	or	#80
+	out	(#F4),a			; avoid "warm" reset on MSX2+
+
+	rst	#30			; call to BIOS
+   if SPC=0
+	db	0
+   else
+	db	#80
+   endif
+	dw	0			; address
+
+
+ResetRun:
+	ld	a,(ROMLoaded)		; ROM loaded?
+	or	a
+	jr	z,Ma01
+
+; Restore slot configuration!
+        ld      a,(ERMSlt)
+        ld      h,#40
+        call    ENASLT
+
+	ld	a,(CardMDR+#3A)		; RAM bits
+	bit	0,a			; 2MB enabled for mapper?
+	jr	z,ResetR1
+	ld	a,(Record+#3B)		; cartridge configuration
+	and	%10101011		; disable mapper ports FC/FD/FE/FF and port 3C, as well as RAM to be available for shador RAM
+	ld	(Record+#3B),a		; cartridge configuration
+ResetR1:
+	ld	a,(Record+#02)
+	ld	(AddrFR),a		; set starting block
+	ld	a,#38
+	ld	(CardMDR),a		; Set delayed config
+	ld	hl,Record+#23
+	ld	de,R1Mask
+	ld	bc,26
+	ldir				; copy directory record data into reset configuration
+
+	in	a,(#F4)			; read from F4 port on MSX2+
+	or	#80
+	out	(#F4),a			; avoid "warm" reset on MSX2+
+
+	rst	#30			; call to BIOS
+   if SPC=0
+	db	0
+   else
+	db	#80
+   endif
+	dw	0			; address
+
+
+; Set 2MB RAM to shadow
+RAM2Shadow:
+	ld	a,(ERMSlt)
+	ld	h,#40			; set 1 page
+	call	ENASLT
+
+	ld	a,#38			; Disable shadow, set delayed config, BIOSes are in FlashROM
+	ld	(CardMDR),a
+
+	ld	a,%10000000		; enable SD interface, disable RAM substitution
+	ld	(CardMDR+#36),a
+
+	ld	a,%10101011		; disable mapper ports FC/FD/FE/FF and port 3C, as well as RAM
+	ld	(RSTINS),a		; patch registers for reset
+
+	ld	a,(CardMDR+#3A)
+	and	%11101010
+	or	%00010101		; Set 2MB RAM for shadow RAM, disable SRAM for FMPAC and MSX Audio and MSX Audio ADPCM
+	ld	(CardMDR+#3A),a
+
+	xor	a
+	ld	(AddrFR),a
+	ld	hl,RST2SPC
 	ld	de,R1Mask
 	ld	bc,26
 	ldir
@@ -579,7 +765,8 @@ ADDimage:
 	ld	a,1
 ADDimgR:
 	ld	(protect),a	
-
+	xor	a
+	ld	(ROMLoaded),a		; ROM not loaded flag
 	print	ADD_RI_S
 	ld	de,Bi_FNAM
 	ld	c,_BUFIN
@@ -769,7 +956,7 @@ opf3:	push	bc
 
 ; load RCP file if exists
 	xor	a
-	ld	(RCPData),a		; erase RCP data
+	ld	(RCPData),a		; erase RCP data flag
 
 	ld	hl,FCB
 	ld	de,FCBRCP
@@ -823,6 +1010,8 @@ opf31:	ld	c,_INNOE		; load RCP?
 	jr	z,opf4
 	cp	"y"
 	jr	nz,opf31
+	call	SymbOut
+opf310:
 
 opf32:
 	ld	hl,BUFTOP
@@ -831,23 +1020,28 @@ opf32:
 	ldir				; copy read RCP data to its place
 	ld	hl,RCPData+#04
 	ld	a,(hl)
+	and	%11101111		; disable writing to bank
 	or	%00100000		; for ROM use and %11011111
 	ld	(hl),a			; set RAM as source
 	ld	hl,RCPData+#0A
 	ld	a,(hl)
+	and	%11101111		; disable writing to bank
 	or	%00100000		; for ROM use and %11011111
 	ld	(hl),a			; set RAM as source
 	ld	hl,RCPData+#10
 	ld	a,(hl)
+	and	%11101111		; disable writing to bank
 	or	%00100000		; for ROM use and %11011111
 	ld	(hl),a			; set RAM as source
 	ld	hl,RCPData+#16
 	ld	a,(hl)
+	and	%11101111		; disable writing to bank
 	or	%00100000		; for ROM use and %11011111
 	ld	(hl),a			; set RAM as source
 
 ; ROM file open
 opf4:
+	print	ONE_NL_S
 	ld	de,FCB
 	ld	c,_FOPEN
 	call	DOS			; Open file
@@ -1470,6 +1664,7 @@ FPT03:	ld	c,_INNOE		; 32 < ROM =< 64
 	jp	z,MTC			; no minirom (mapper), select manually
 	cp	"y"			; yes minirom
 	jr	nz,FPT03
+	call	SymbOut
 
 FPT04:
 	ld	a,(RCPData)
@@ -1530,9 +1725,11 @@ DTME4:	ld	c,_INNOE
 	call	DOS
 	or	%00100000
 	cp	"y"
-	jp	z,DE_F1
+	jp	z,DE_F0
 	cp	"n"
 	jr	nz,DTME4
+	call	SymbOut
+	print	ONE_NL_S
 MTC:					; Manually select MAP type
 	print	CoTC_S
 	ld	a,1
@@ -1596,6 +1793,10 @@ MTC6:
 	pop	bc
 	pop	af
 	jp	DTME1
+
+DE_F0:
+	call	SymbOut
+	print	ONE_NL_S
 
 DE_F1:
 ; Save MAP config to Record form
@@ -1930,42 +2131,24 @@ SFM80:
 
 ; Size  - size file 4 byte
 ; calc blocks len
-	ld	a,(FMPCHECK)		; Music module bits
-	or 	a			; FMPAC?
-	jr	z,SFM82
-
-	ld	a,(Size+3)
-	or	a
-	jr	nz,SFM81
-	ld	a,(Size+2)
-	cp	#0F			; < 984kb?
-	jr	c,DEFMR1
-	cp	#0F
-	jr	nz,SFM81
-	ld	a,(Size)
+	ld	a,(MaxSize+3)
 	ld	b,a
+	ld	a,(Size+3)		; must be always zero
+	cp	b
+	jr	nz,DEFOver
+	ld	a,(MaxSize+2)
+	ld	b,a
+	ld	a,(Size+2)		; 3rd byte of file's size
+	cp	b
+	jr	c,DEFMR1		; less than max size?
+	jr	nz,DEFOver		; more tnan max size?
 	ld	a,(Size+1)
-	add	a,b
-	or	a			; 0x100000 984kb?
-	jr	z,DEFMR1
-SFM81:
-	print	FileOver_S1
-	jr	DEFOver1
-SFM82:
-	ld	a,(Size+3)
 	or	a
 	jr	nz,DEFOver
-	ld	a,(Size+2)
-	cp	#0E			; < 920kb?
-	jr	c,DEFMR1
-	cp	#0E
-	jr	nz,DEFOver
 	ld	a,(Size)
-	ld	b,a
-	ld	a,(Size+1)
-	add	a,b
-	or	a			; 0x100000 984kb?
-	jr	z,DEFMR1
+	or	a
+	jr	nz,DEFOver		; for 1 or 2 mb exact
+	jr	DEFMR1
 
 DEFOver:
 	print	FileOver_S
@@ -1976,7 +2159,7 @@ DEFOver1:
 	jp	MainM
 
 DEFMR1:
-	ld	a,1			; start from block 1 in RAM (skip first 64kb)
+	xor	a			; start from block 0 in RAM
 	ld	(Record+02),a		; Record+02 - starting block
 	ld	a,(Size+2)
 	or	a
@@ -2000,13 +2183,15 @@ DEF10A:
 	call	DOS
 	or	%00100000
 	cp	"y"
-	jr	z,DEF10AA
+	jr	z,DEF10A0
 	cp	"n"
 	jp	nz,DEF10A
+	call	SymbOut
 	ld	a,1
 	ld	(F_D),a			; don't create directory
 	jp	DEF10
-
+DEF10A0:
+	call	SymbOut
 DEF10AA:
 	print	ONE_NL_S
 	call	FrDIR			; search free DIR record
@@ -2051,6 +2236,9 @@ DEF06A:
 
 ; print Record name
 DEF13:
+	ld	a,(F_D)
+	or	a
+	jr	nz,DEF122		; skip directory entry creation?
 	print	NR_I_S
 	ld	b,25			; 30-5 for "RAM: "
 	ld	hl,Record+10
@@ -2064,7 +2252,7 @@ DEF12:
 	pop	hl
 	inc	hl
 	djnz	DEF12
-
+DEF122:
 	ld	a,(F_A)
 	or	a
 	jr	nz,DEF10		; Flag automatic confirm
@@ -2106,17 +2294,23 @@ DEF10B:
 	call	DOS
 	or	%00100000
 	cp	"y"
-	jr	z,DEF11
+	jr	z,DEF10C
 	cp	"n"
-	jp	nz,DEF10B
+	jr	nz,DEF10B
+	call	SymbOut
 	print	ONE_NL_S
 	jp	MainM
-
+DEF10C:
+	call	SymbOut
 DEF11:
 	print	ONE_NL_S
 	call	LoadImage		; load file into RAM
+	jr	c,DEF110
+	ld	a,1
+	ld	(ROMLoaded),a		; ROM was loaded into RAM
 
 ; Restore slot configuration!
+DEF110:
         ld      a,(ERMSlt)
         ld      h,#40
         call    ENASLT
@@ -2132,10 +2326,13 @@ DEF11:
         ld      h,#80
         call    ENASLT          	; Select Main-RAM at bank 8000h~BFFFh
 
+	ld	a,(ROMLoaded)		; ROM was loaded into RAM?
+	or	a
+	jr	z,DEF11B
+
 	ld	a,(F_D)
 	or	a
 	jr	nz,DEF11A		; skip directory entry creation?
-
 	call	SaveDIR			; save directory
 	jr	c,DEF11B
 
@@ -2145,40 +2342,15 @@ DEF11A:
 
 DEF11B:
 	ld	a,(F_R)
-	or	a			; restart?
-	jr	nz,Reset1
-
+	or	a			; restart to Boot Menu?
+	jp	nz,DoReset
+	ld	a,(F_S)
+	or	a			; restart and start ROM?
+	jp	nz,ResetRun
 	ld	a,(F_A)
 	or	a			; auto mode?
 	jp	nz,Exit
 	jp	MainM	
-
-Reset1:
-; Restore slot configuration!
-        ld      a,(ERMSlt)
-        ld      h,#40
-        call    ENASLT
-
-	xor	a
-	ld	(AddrFR),a
-	ld	a,#38
-	ld	(CardMDR),a
-	ld	hl,RSTCFG
-	ld	de,R1Mask
-	ld	bc,26
-	ldir
-
-	in	a,(#F4)			; read from F4 port on MSX2+
-	or	#80
-	out	(#F4),a			; avoid "warm" reset on MSX2+
-
-	rst	#30			; call to BIOS
-   if SPC=0
-	db	0
-   else
-	db	#80
-   endif
-	dw	0			; address
 
 
 ;-----------------------------------------------------------------------------
@@ -2213,7 +2385,7 @@ LIFM1:
 	ld	a,#34			; RAM instead of ROM, Bank write enabled, 8kb pages, control off
 	ld	(R2Mult),a		; set value for Bank2
 
-	ld	a,(Record+02)		; start block (absolute block 64kB), 6 for Flash, 1 for RAM
+	ld	a,(Record+02)		; start block (absolute block 64kB), 6 for Flash, 0 for RAM
 	ld	(EBlock),a
 	ld	(AddrFR),a
         ld      a,(TPASLOT1)
@@ -2547,6 +2719,8 @@ CHK_L1: ld	a,(de)
     	xor	c
     	jp	p,CHK_R1		; Jump if readed bit 7 = written bit 7
     	scf
+	ld	a,#F0
+	ld	(de),a			; Return FlashROM to command mode
 CHK_R1:	pop bc
 	ret	
 
@@ -3814,6 +3988,19 @@ fkey06:
 	ld	(F_R),a			; reset after loading ROM
 	ret
 fkey07:
+	ld	hl,BUFFER+1
+	ld	a,(hl)
+	and	%11011111
+	cp	"S"
+	jr	nz,fkey08
+	inc	hl
+	ld	a,(hl)
+	or	a
+	jr	nz,fkey08
+	ld	a,4
+	ld	(F_S),a			; reset and start ROM
+	ret
+fkey08:
 	xor	a
 	dec	a			; S - Illegal flag
 	ret
@@ -3838,6 +4025,13 @@ RSTCFG:
 	db	0,0,0,0,0,0
 	db	0,0,0,0,0,0
 	db	#FF,#30
+
+RST2SPC:
+	db	#F8,#50,#00,#85,#3F,#40
+	db	#F8,#70,#01,#8C,#3F,#60
+	db	#F8,#90,#02,#8C,#3F,#80
+	db	#F8,#B0,#03,#8C,#3F,#A0
+RSTINS:	db	#FF,#38
 
 CARTTAB: ; (N x 64 byte) 
 	db	"U"					;1
@@ -3898,8 +4092,7 @@ DEF_CFG:
 ;
 ;Variables
 ;
-FMPCHECK:
-	db	0
+MusicM:	db	0
 protect:
 	db	1
 DOS2:	db	0
@@ -3949,6 +4142,8 @@ FILENAME:
 	db	"                                $"
 	db	0
 Size:	db	0,0,0,0
+MaxSize:
+	db	0,0,0,0
 Record:	ds	#40
 SRSize:	db	0
 multi	db	0
@@ -3965,6 +4160,9 @@ DIRCNT:	db	0,0
 DIRPAG:	db	0,0
 CURPAG:	db	0,0
 
+ROMLoaded:
+	db	0
+
 ; /-flags parameter
 F_H	db	0
 F_P	db	0
@@ -3972,6 +4170,7 @@ F_A	db	0
 F_V	db	0
 F_D	db	0
 F_R	db	0
+F_S	db	0
 p1e	db	0
 
 ZeroB:	db	0
@@ -4009,11 +4208,14 @@ ssr08:	db	"8kb or less$"
 MAIN_S:	db	13,10
 	db	"Main Menu",13,10
 	db	"---------",13,10
-	db	" 1 - Write ROM image into cartridge's RAM with protection",13,10
-	db	" 2 - Write ROM image into cartridge's RAM without protection",13,10
+	db	" 1 - Load ROM image into cartridge's RAM with protection",13,10
+	db	" 2 - Load ROM image into cartridge's RAM without protection",13,10
 	db	" 3 - Optimize and clean-up directory",13,10
-	db	" 4 - Restart the computer",13,10
-	db	" 0 - Exit to MSX-DOS",13,10,"$"
+	db	" 7 - Restart the computer and run the loaded ROM",13,10
+	db	" 8 - Restart the computer and go to the Boot Menu",13,10
+	db	" 9 - Restart the computer for 2mb of shadow RAM and no SRAM",13,10
+	db	" 0 - Exit to MSX-DOS",13,10,13,10
+	db	" Selecting options 7-9 will result in immediate reset!",13,10,"$"
 
 EXIT_S:	db	10,13,"Thanks for using the RBSC's products!",13,10,"$"
 ANIK_S:
@@ -4028,7 +4230,7 @@ OpFile_S:
 	db	10,13,"Opening file: ","$"
 RCPFound:
 	db	"RCP file with the same name found!"
-	db	10,13,"Use loaded RCP data for this ROM? (y/n)",10,13,"$"
+	db	10,13,"Use loaded RCP data for this ROM? (y/n) $"
 UsingRCP:
 	db	"Autodetection ignored, using data from RCP file...",10,13,"$"
 F_NOT_F_S:
@@ -4053,20 +4255,15 @@ NoAnalyze:
 	db	"The ROM's mapper type is set to: $"
 MROMD_S:
 	db	"ROM's file size: $" 
-CTC_S:	db	"Do you confirm this mapper type? (y/n)",10,13,"$"
+CTC_S:	db	"Do you confirm this mapper type? (y/n) $"
 CoTC_S:	db	10,13,"Manual mapper type selection:",13,10,"$"
 Num_S:	db	"Your selection - $"
 FileOver_S:
 	db	10,13
 	db	"Sorry, the file is too big to be loaded into the cartridge's RAM!",13,10
-	db	"You can only upload ROM files up to 920kb into RAM with this firmware.",13,10
-	db	"Please select another file...",13,10,"$"
-FileOver_S1:
-	db	10,13
-	db	"Sorry, the file is too big to be loaded into the cartridge's RAM!",13,10
-	db	"You can only upload ROM files up to 984kb into RAM with this firmware.",13,10
-	db	"Please select another file...",13,10,"$"
-MRSQ_S:	db	10,13,"The ROM's size is between 32kb and 64kb. Create Mini ROM entry? (y/n)",13,10,"$"
+	db	"Disabling SRAM, as well as assigning 2mb to shadow RAM via the C2MAN",13,10
+	db	"utility could help to load larger files.",13,10,"$"
+MRSQ_S:	db	10,13,"The ROM's size is between 32kb and 64kb. Create Mini ROM entry? (y/n) ",13,10,"$"
 Strm_S:	db	"MMROM-CSRM: $"
 FNRE_S:	db	"Using Record-FBlock-NBank for Mini ROM",#0D,#0A
 	db	"[Multi ROM entry] - $"
@@ -4078,7 +4275,7 @@ NR_I_S:	db	"Name of directory entry - RAM: $"
 FileSZH:
 	db	"File size (hexadecimal): $"
 NR_L_S: db	"Press ENTER to confirm or input a new name below:",13,10,"$"
-LFRI_S:	db	"Writing ROM image, please wait...",13,10,"$"
+LFRI_S:	db	"Loading ROM image into RAM, please wait...",13,10,"$"
 Prg_Su_S:
 	db	13,10,"The ROM image was successfully written into cartridge's RAM!"
 	db	13,10,"Please reboot (NO POWER OFF!) your MSX now...",13,10
@@ -4086,12 +4283,13 @@ Prg_Su_S:
 	db	13,10,"it will destroy the contents of the ROM, that is currently loaded into the"
 	db	13,10,"cartridge's RAM!",13,10,"$"
 FL_er_S:
-	db	13,10,"Writing into cartridge's RAM failed!",13,10,"$"
+	db	13,10,"Loading into cartridge's RAM failed!",13,10,"$"
 FL_erd_S:
-	db	13,10,"Writing directory entry failed!",13,10,"$"
+	db	13,10,"Creating directory entry failed!",13,10,"$"
 CreaDir:
-	db      "Create 'RAM:' directory entry for the loaded ROM? (y/n)$"
-LOAD_S: db      "Ready to write the ROM image. Proceed? (y/n)$"
+	db	10,13
+	db      "Create 'RAM:' directory entry for the loaded ROM? (y/n) $"
+LOAD_S: db      "Ready to load the ROM image. Proceed? (y/n) $"
 DirComr_S:
 	db	10,13,"Directory entries will be optimized. Proceed? (y/n) $"
 DirComr_E:
@@ -4110,8 +4308,8 @@ TestRDT:
 
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Shadow RAM Loader v3.02",13,10
-	db	"(C) 2024 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ Shadow RAM Loader v3.05",13,10
+	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
 Findcrt_S:
@@ -4119,8 +4317,31 @@ Findcrt_S:
 M_Wnvc:
 	db	10,13,"WARNING!",10,13
 	db	"Uninitialized cartridge or wrong version of Carnivore cartridge found!",10,13
-	db	"Only Carnivore2+ cartridge is supported. The program will now exit.",10,13
-	db	"Press any key...",10,13,"$"
+	db	"Only Carnivore2+ cartridge is supported. Please insert Carnivore2+ and",10,13
+	db	"try again...",10,13,"$"
+NoShRAM:
+	db	10,13,"NOTE!",10,13
+	db	"The shadow RAM is not enabled, so loading ROM images is not possible.",10,13
+	db	"Please enable shadow RAM via the C2MAN utility to use this utility.",10,13,"$"
+NoRAM:
+	db	10,13,"NOTE!",10,13
+	db	"The RAM is substituted by enabling both SD and CF card interfaces, so",10,13
+	db	"loading ROM images is not possible. Please enable only one card via",10,13
+	db	"the C2MAN utility in order to enable RAM and to use this utility.",10,13,"$"
+NotAllRAM:
+	db	10,13
+	db	"Not full amount of RAM is available because SRAM option is enabled.",10,13
+	db	"Do you want to disable SRAM option (y/n) ? $"
+RAMAvail:
+	db	10,13
+	db	"Available Shadow RAM amount: $"
+RAM1MB:	db	"1mb $"
+RAM2MB:	db	"2mb $"
+RAM1MB1:
+	db	"786kb$"	; MSX Audio - SRAM
+RAM1MB2:
+	db	"983kb$"	; FMPAC - SRAM
+
 FindcrI_S:
 	db	13,10,"Press ENTER for the found slot or input new slot number - $"
 
@@ -4146,20 +4367,21 @@ I_MPAR_S:
 	db	"Too many parameters!",13,10,13,10,"$"
 H_PAR_S:
 	db	"Usage:",13,10,13,10
-	db	" c2ramldr [filename.rom] [/h] [/v] [/a] [/p] [/d] [/r]",13,10,13,10
+	db	" c2ramldr [filename.rom] [/h] [/v] [/a] [/p] [/d] [/r] [/s]",13,10,13,10
 	db	"Command line options:",13,10
 	db	" /h  - this help screen",13,10
 	db	" /v  - verbose mode (show detailed information)",13,10
 	db	" /p  - switch RAM protection off after copying the ROM",10,13
 	db	" /d  - don't create a directory entry for the uploaded ROM",13,10
-	db	" /a  - autodetect and write ROM image (no user interaction)",13,10
-	db	" /r  - restart the computer after uploading the ROM",10,13,"$"
+	db	" /a  - autodetect and load ROM image (no user interaction)",13,10
+	db	" /r  - restart the computer and go to the Boot Menu",10,13
+	db	" /s  - restart the computer and start the loaded ROM",10,13,"$"
 
 RCPData:
 	ds	30
 
 	db	0,0,0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
 	db	0,0,0
 
 BUFTOP:

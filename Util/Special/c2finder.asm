@@ -1,6 +1,6 @@
 ;
 ; Carnivore Family Cartridge Finder
-; Copyright (c) 2024 RBSC
+; Copyright (c) 2025 RBSC
 ; Version 3.00
 ;
 
@@ -1546,7 +1546,7 @@ CLStr_S:
 PRESENT_S:
 	db	3
 	db	"Carnivore Cartridge Family Finder v3.00",13,10
-	db	"(C) 2024 RBSC. All rights reserved",13,10,"$"
+	db	"(C) 2025 RBSC. All rights reserved",13,10,"$"
 M29W640:
 	db	10,13
         db      " FlashROM chip detected: M29W640G$"
@@ -1575,7 +1575,7 @@ H_PAR_S:
 	db	" /r  - restart computer",10,13,"$"
 
 	db	0,0,0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
 	db	0,0,0
 
 BUFTOP:

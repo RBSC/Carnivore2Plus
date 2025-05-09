@@ -1,7 +1,7 @@
 ;
 ; Carnivore2+ Cartridge's FlashROM Editor
-; Copyright (c) 2024 RBSC
-; Version 3.05
+; Copyright (c) 2025 RBSC
+; Version 3.07
 ;
 ; WARNING!!
 ; The program's code and data before must not go over #4000 and below #C000 addresses!
@@ -2749,6 +2749,8 @@ CHK_L1: ld	a,(de)
     	xor	c
     	jp	p,CHK_R1		; Jump if readed bit 7 = written bit 7
     	scf
+	ld	a,#F0
+	ld	(de),a			; Return FlashROM to command mode
 CHK_R1:	pop bc
 	ret	
 
@@ -7368,9 +7370,9 @@ H0SRo	db	"> Reset MSX: 0-no, 1-yes$"
 
 H7Mconf	db	"> Expanded slot: 0-no, 1-yes$"
 H6Mconf	db	"> Enable mapper port reading$"
-H5Mconf	db	"> Enable YM2413 (OPLL) ports$"
-H4Mconf	db	"> Enable memory mapper port$"
-H3Mconf	db	"> Enable FMPAC and SRAM$"
+H5Mconf	db	"> Enable MUSIC module ports$"
+H4Mconf	db	"> Enable memory mapper ports$"
+H3Mconf	db	"> Enable MUSIC module & SRAM$"
 H2Mconf	db	"> Enable RAM and mapper$"
 H1Mconf	db	"> Enable DISK controller$"
 H0Mconf	db	"> Enable SCC and mappers$"
@@ -7410,8 +7412,8 @@ I_MPAR_S:
 ;------------------ MODE 80 ------------------
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Multi-Cartridge Editor v3.05",13,10
-	db	"(C) 2022 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ Multi-Cartridge Editor v3.07",13,10
+	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
 Findcrt_S:
@@ -7457,8 +7459,8 @@ H_PAR_S:
 ;------------------ MODE 40 ------------------
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Multi-Cartridge",10,13,"Editor v3.05",13,10
-	db	"(C) 2022 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ Multi-Cartridge",10,13,"Editor v3.07",13,10
+	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found.",10,13
 	db	"Please specify its slot number - $"
@@ -7786,5 +7788,5 @@ HSOB	db	"ROM's starting options register",13,10
 EXIT_S:	db	10,13,"Thanks for using RBSC's products!",13,10,"$"
 
 	db	0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
 	db	0,0,0

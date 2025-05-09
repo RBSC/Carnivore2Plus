@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Carnivore2+ MultiFunctional Cartridge
-Copyright (c) 2024 RBSC
+Copyright (c) 2025 RBSC
 --------------------------------------------------------------------------------
 
 On some MSX computers with built-in firmware, for example Sony HB-75P, after exiting the Boot Menu it's impossible to

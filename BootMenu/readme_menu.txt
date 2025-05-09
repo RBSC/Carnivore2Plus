@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
-Carnivore2+ MultiFunctional Cartridge Boot Menu version 3.04
-Copyright (c) 2024 RBSC
+Carnivore2+ MultiFunctional Cartridge Boot Menu version 3.05
+Copyright (c) 2025 RBSC
 --------------------------------------------------------------------------------
 
 The Boot Menu code and the custom font were created by RBSC.

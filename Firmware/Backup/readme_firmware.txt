@@ -1,19 +1,23 @@
 --------------------------------------------------------------------------------
 Carnivore2+ MultiFunctional Cartridge
-Copyright (c) 2024 RBSC
+Copyright (c) 2025 RBSC
 Portions (c) Mitsutaka Okazaki
 Portions (c) Kazuhiro Tsujikawa
 Portions (c) Jose Tejada
-Last updated: 05.04.2024
+
+ROMs are copyright by their respective owners. See readme file in BIOSes folder
+
+Last updated: 09.05.2025
 --------------------------------------------------------------------------------
 
 The Altera firmware was created by RBSC. Commercial usage is not allowed!
 
 IMPORTANT!
 ----------
-Please note that for Carnivore2+ there are several variants of one and the same
-firmware. The initial release contains the firmware with FMPAC (MSX Music) and
-SFG-05 music modules. These firmwares have the same version - 3.01. To be able
+Carnivore2+ currently supports 3 different firmares. The difference is in the
+music module. A user can select between MSX Music (FMPAC), SFG (OPM) and MSX
+Audio firmwares. The MSX Audio supports the 256kb sample RAM and the ADPCM
+playback. The Sega's SN chip support is present in all 3 firmwares. To be able
 to flash the selected firmware into the cartridge, the C2FWUPD utility should
 be used.
 
@@ -30,10 +34,11 @@ firmwares and music module's BIOSes:
 
  - MSX Music (FMPAC) firmware and BIOS
  - SFG-05 FM firmware and BIOS
- - (later) MSX Audio firmware and BIOS
+ - MSX Audio firmware and BIOS
 
-Later, more firmware versions may become available. Each firmware set consists
-of a BIN, CRC and ROM file. Please do not edit or delete any of those files!
+Later, more firmware versions may become available with additional features and
+sound card support.. Each firmware set consists of a BIN, CRC and ROM file.
+Please do not edit or delete any of those files!
 
 To start using the newly-uploaded firmware and BIOS please power off your computer
 and then power it on again.
@@ -57,9 +62,10 @@ The procedure is as follows:
 
 The FMPAC (MSX Music) music module requires the FMPCCMFC.BIN file to be flashed.
 The SFG-05 music module requires the SFGMCMFC.BIN file to be flashed into the
-cartridge. If you don't flash the appropriate music module's BIOS after changing
-the firmware, music players and games may fail to recognize the newly-installed
-music module and will not play the music properly.
+cartridge. The MSX Audio music module requires the MSXACFMC.BIN file to be flashed.
+If you don't flash the appropriate music module's BIOS after changing the firmware,
+music players and games may fail to recognize the newly-installed music module and
+will not play the music properly.
 
 To identify which music module is currently available in the firmware, look for
 the name of this module under the firmware version in the startup screen of

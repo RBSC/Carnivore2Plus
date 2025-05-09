@@ -1,7 +1,7 @@
 ;
 ; Carnivore2+ Cartridge's FlashROM Backup
-; Copyright (c) 2024 RBSC
-; Version 3.00
+; Copyright (c) 2025 RBSC
+; Version 3.01
 ;
 
 ; !COMPILATION OPTIONS!
@@ -1568,6 +1568,8 @@ CHK_L1: ld	a,(de)
     	xor	c
     	jp	p,CHK_R1		; Jump if read bit 7 = written bit 7
     	scf
+	ld	a,#F0
+	ld	(de),a			; Return FlashROM to command mode
 CHK_R1:	pop bc
 	ret	
 
@@ -2931,8 +2933,8 @@ OpInterr2:
 	db	10,13,"ABORTED! This will result in an partially written FlashROM...",10,13,"$"
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ FlashROM Backup v3.00",13,10
-	db	"(C) 2024 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ FlashROM Backup v3.01",13,10
+	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
 Findcrt_S:
@@ -2987,7 +2989,7 @@ H_PAR_S:
 	db	"There will be no overwrite warnings when /u option is used!",10,13,"$"
 
 	db	0,0,0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
 	db	0,0,0
 
 BUFTOP:

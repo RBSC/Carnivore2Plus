@@ -1,13 +1,13 @@
 ;
 ; Carnivore2+ Cartridge's Boot Menu
-; Copyright (c) 2024 RBSC
+; Copyright (c) 2025 RBSC
 ; Portions (c) Grauw
 ; Portions (c) Spark/SDM
 ; Portions (c) Jordon aka KOD/SDM
 ; Portions (c) Nyyrikki
 ; Portions (c) Dolphin_Soft
  
-; Version 3.04
+; Version 3.05
 ;
 
 ; !COMPILATION OPTIONS!
@@ -177,7 +177,7 @@ REGLORG	equ	MUSINIT+#05AB
 	db	0,0,0,0,0,0
 Label	db	"CMFCSDCF"
 	db	0
-BBVers	db	"v3.04"  ; Version | also update it in the header!
+BBVers	db	"v3.05"  ; Version | also update it in the header!
 	db	0
 
 
@@ -7349,17 +7349,28 @@ TurboMode:
 	ld	a,(TURBOM)
 	or	a
 	jr	z,TurboM1
-	ld	a,1
+
+	in	a,(#41)		; get status bytes
+	bit	2,a
+	jp	nz,CH00
+	set	0,a
+	di
 	out	(#41),a		; disable Turbo mode on MSX2+
-	dec	a
+	ei
+	xor	a
 	ld	(TURBOM),a
 	call	PrintTur
 	jp	CH00
 	
 TurboM1:
-	xor	a
+	in	a,(#41)		; get status bytes
+	bit	2,a
+	jp	nz,CH00
+	res	0,a
+	di
 	out	(#41),a		; enable Turbo mode on MSX2+
-	inc	a
+	ei
+	ld	a,1
 	ld	(TURBOM),a
 	call	PrintTur
 	jp	CH00
@@ -10127,4 +10138,4 @@ Filler:
 ;	#0F - stop symbol
 ;
 
-;	RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024
+;	RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025

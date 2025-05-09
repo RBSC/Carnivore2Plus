@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 Carnivore2+ MultiFunctional Cartridge
-Copyright (c) 2024 RBSC
+Copyright (c) 2025 RBSC
 --------------------------------------------------------------------------------
 
 The utilities and the readme.txt file were originally made by Vladimir and were

@@ -1,7 +1,7 @@
 ;
 ; Carnivore2+ Cartridge's Firmware Updater
-; Copyright (c) 2024 RBSC
-; Version 2.01
+; Copyright (c) 2025 RBSC
+; Version 3.00
 ;
 
 ; !COMPILATION OPTIONS!
@@ -174,17 +174,32 @@ DetEEPR:
 	ld	(R1Mult),a
 
 	call 	SFL_init    		; Wake UP and read ID eerpom
+
+;-------------------------
+;	push	af
+;	push	af
+;	print	CRLF_S
+;	print	EPCS_ID
+;	pop	af
+;	call	HEXOUT			; For debugging only
+;	print	CRLF_S
+;	pop	af
+;-------------------------
+
 	ld	ix,T_EPCS1
-	cp      #10
+	cp      #10			; 128kb
 	jr	z,Det1
 	ld	ix,T_EPCS4
-	cp	#12
+	cp	#12			; 512kb
 	jr	z,Det1
 	ld	ix,T_EPCS16
-	cp	#14
+	cp	#14			; 2mb
 	jr	z,Det1
 	ld	ix,T_EPCS64
-	cp	#16
+	cp	#16			; 16mb
+	jr	z,Det1
+	ld	ix,UNK_EPCS
+	cp	#FF			; Unknown, assuming EPCS4
 	jr	z,Det1
 NoGood:
 	print	unc_EPCS		; unknown or incompatible EEPROM
@@ -297,6 +312,7 @@ Upd01:
 
 ; Backup
 FWU_BACK:
+	print	SelFW
 	call	CleanFCB
 	ld	hl,FW_BACK
 	ld	de,FCBN+1
@@ -317,6 +333,7 @@ FWU_BACK:
 
 ; FMPAC
 FWU_FMPAC:
+	print	SelFMPAC
 	call	CleanFCB
 	ld	hl,FW_FMPAC
 FWU_M:
@@ -337,12 +354,14 @@ FWU_M:
 
 ; SFG
 FWU_SFG:
+	print	SelSFG
 	call	CleanFCB
 	ld	hl,FW_SFG05
 	jp	FWU_M
 
 ; MSX AUDIO
 FWU_MSXAU:
+	print	SelMSXA
 	call	CleanFCB
 	ld	hl,FW_MSXAU
 	jp	FWU_M
@@ -366,17 +385,18 @@ FWBackup:
 m0000:
 	call	SymbIn
 	or	%00100000
-	call	SymbOut
 	cp	"y"
 	jr	z,m0003
 	cp	"n"
 	jr	z,m0001
 	jr	m0000
 m0001:
+	call	SymbOut
 	print	ONE_NL_S
 	jp	MainM
 
 m0003:
+	call	SymbOut
 	ld	a,#78
 	ld	(FWCRC),a
 	ld	a,#56
@@ -687,42 +707,44 @@ FWUpdate:
 	print   Q_BackFW		; Backup firmware?
 m0035:	call	SymbIn
 	or	%00100000
-	call	SymbOut
 	cp	"y"
 	jr	z,m0037
 	cp	"n"
 	jr	z,m0036
 	jr	m0035
 m0036:
+	call	SymbOut
 	print   M_BackFW		; Instruction
-	jp	UpdMenu
+	jp	MainM
 
 m0037:
+	call	SymbOut
 	print   Q_Prog			; Print warning and question to update firmware
 m004:
 	call	SymbIn
 	or	%00100000
-	call	SymbOut
 	cp	"p"			; proceed
 	jr	z,m005
 	cp	"e"			; exit
 	jr	z,me004
 	jr	m004
 me004:
+	call	SymbOut
 	print	ONE_NL_S
-	jp	UpdMenu
+	jp	MainM
 
 m005:
+	call	SymbOut
 	print   Q_Progr1		; Really update firmware?
 m0044:	call	SymbIn
 	or	%00100000
-	call	SymbOut
 	cp	"y"
 	jr	z,m0045
 	cp	"n"
 	jr	z,me004
 	jr	m0044
 m0045:
+	call	SymbOut
 	print	ONE_NL_S
 	print	CheckCRC
         ld      a,(TPASLOT1)
@@ -730,14 +752,17 @@ m0045:
         call    ENASLT
 
 	ld	de,FCBC
+	push	de
+	pop	ix
 	ld	c,_FOPEN
 	call	DOS			; Open CRC file
 	or	a
 	jr	z,m0047
 m00461:
 	print   FlOpErr			; File open error
+	call	ShowFname		; Print affected file name
 	print	ONE_NL_S
-	jp	UpdMenu
+	jp	MainM
 m0047:
 	ld	de,(FCBC+16)		; crc file size
 	ld	a,d
@@ -775,17 +800,19 @@ m00471:
 	ld	c,_FCLOSE		; Close file
 	call	DOS		
 ;	print	ONE_NL_S
-	jp	UpdMenu
+	jp	MainM
 m0048:
 	ld	de,FCBC
 	ld	c,_FCLOSE		; Close file
 	call	DOS		
 
 	ld	de,FCBN
+	push	de
+	pop	ix
 	ld	c,_FOPEN
 	call	DOS			; Open file
 	or	a
-	jr	nz,m00461
+	jp	nz,m00461
 
 	ld      hl,1
 	ld      (FCBN+14),hl		; Record size = 1 byte
@@ -944,7 +971,7 @@ m00492:
 	jr	m00500
 m00493:
 	print	CheckCRC_NOK
-	jp	UpdMenu
+	jp	MainM
 
 m00500:
 	ld	hl,FCBN+1+8+3		; Clear FCB
@@ -965,13 +992,16 @@ m0050:	ld	(hl),a
         call    ENASLT
 
 	ld	de,FCBN
+	push	de
+	pop	ix
 	ld	c,_FOPEN
 	call	DOS			; Open file
 	or	a
 	jr	z,m0051
 	print   FlOpErr			; File open error
+	call	ShowFname		; Print affected file name
 	print	ONE_NL_S
-	jp	UpdMenu
+	jp	MainM
 m0051:
 	ld      hl,1
 	ld      (FCBN+14),hl		; Record size = 1 byte
@@ -994,7 +1024,7 @@ m0068:	ld	de,FCBN
 	ld	c,_FCLOSE		; Close file
 	call	DOS		
 ;	print	ONE_NL_S
-	jp	UpdMenu
+	jp	MainM
 
 m0053:					; 
 	ld	c,_SDMA			; Set DMA address
@@ -1228,6 +1258,8 @@ BIOSupd:
 	print	ROProgs			; Print "Updating BIOS"
 
 	ld	de,FCBR
+	push	de
+	pop	ix
 	ld	c,_FOPEN
 	call	DOS			; Open file
 	ld      hl,#2000
@@ -1235,8 +1267,9 @@ BIOSupd:
 	or	a
 	jr	z,Fpo
 	print   FlOpErr			; File open error
+	call	ShowFname		; Print affected file name
 	print	ONE_NL_S
-	jp	UpdMenu
+	jp	MainM
 Fpo:
 ; get file size
 	ld	hl,FCBR+#10
@@ -1258,7 +1291,7 @@ Fpo1:
 	ld	c,_FCLOSE		; Close file
 	call	DOS		
 ;	print	ONE_NL_S
-	jp	UpdMenu
+	jp	MainM
 
 DEF9:
 ; !!!! file attribute fix by Alexey !!!!
@@ -1311,7 +1344,7 @@ Fpr02b:
 	ld	de,FCBR
 	ld	c,_FCLOSE		; Close file
 	call	DOS		
-	jp	UpdMenu
+	jp	MainM
 Fpr03:
 	ld	hl,FBUFF		; source
 	ld	de,#8000		; destination
@@ -1323,7 +1356,7 @@ Fpr03b:
 	ld	c,_FCLOSE
 	call	DOS
 	print	FailNote		; print failnote
-	jp	UpdMenu
+	jp	MainM
 Fpr04:
 	ld	a,(PreBnk)
 	inc	a
@@ -1366,7 +1399,7 @@ Fpr05:
 
 	print   pEndS			; Successful upload!
 ;	print	ONE_NL_S
-	jp	UpdMenu
+	jp	MainM
 
 
 
@@ -1597,6 +1630,8 @@ CHK_L1: ld	a,(de)
     	xor	c
     	jp	p,CHK_R1		; Jump if read bit 7 = written bit 7
     	scf
+	ld	a,#F0
+	ld	(de),a			; Return FlashROM to command mode
 CHK_R1:	pop	bc
 	ret	
 
@@ -2599,6 +2634,39 @@ KEYON:
 	ret
 
 
+; Show file name after an error
+ShowFname:
+	print	FlErrName
+	ld	b,8
+	push	ix
+	pop	hl
+	inc	hl
+SFNloop1:
+	ld	a,(hl)
+	or	a
+	jr	z,SFNend
+	push	bc
+	call	SymbOut			; Print name
+	pop	bc
+	inc	hl
+	djnz	SFNloop1
+	ld	a,'.'
+	call	SymbOut			; Print dot
+	ld	b,3
+SFNloop2:
+	ld	a,(hl)
+	or	a
+	jr	z,SFNend
+	push	bc
+	call	SymbOut			; Print extension
+	pop	bc
+	inc	hl
+	djnz	SFNloop2
+SFNend:
+	print	CRLF_S
+	ret
+
+
 ;
 ; Exit to DOS
 ;
@@ -2606,7 +2674,7 @@ Exit:
         ld      a,(ERMSlt)
         ld      h,#40
         call    ENASLT
-	ld	a,#24      		; Disable SFL port
+	ld	a,#24			; Disable SFL port
 	ld	(sfl_CFG),a
 	ld	a,#85			; ROM enabled
 	ld	(R1Mult),a
@@ -2665,8 +2733,8 @@ DESCR:	db	"CMFCSDCF"		; "CMFCCFRC"
 
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Firmware Updater v2.01",13,10
-	db	"(C) 2024 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ Firmware Updater v3.00",13,10
+	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
 Findcrt_S:
@@ -2696,17 +2764,25 @@ ABCD:	db	"0123456789ABCDEF"
 
 EXIT_S:	db	13,10,"Thanks for using the RBSC's products!",13,10,"$"
 
+EPCS_ID:	db	"EPCS chip ID: #$"
 T_EEPROM:	db	"EEPROM chip detected: $"
 T_EPCS1: 	db	#00,#02,"EPCS1 (128Kb)",13,10,"$"
 T_EPCS4:	db	#00,#08,"EPCS4 (512Kb)",13,10,"$"
 T_EPCS16:       db	#00,#20,"EPCS16 (2Mb)",13,10,"$"
 T_EPCS64:       db	#00,#80,"EPCS64 (16Mb)",13,10,"$"
+UNK_EPCS:	db	#00,#08,"Unknown! Assuming EPCS4 (512Kb)",13,10,"$"
 
-FlCrErr:        db	13,10,"File creation error!",13,10,"$"
-FlOpErr:	db	13,10,"File opening error!",13,10,"$"
-FlWrErr:        db	13,10,"File writing error!",13,10,"$"
-FlClErr:        db	13,10,"File closing error!",13,10,"$"
-FlRdErr:        db	13,10,"File reading error!",13,10,"$"
+SelFW:		db	10,13,"Previously backed up firmware selected.",10,13,"$"
+SelFMPAC:	db	10,13,"MSX Music firmware selected.",10,13,"$"
+SelSFG:		db	10,13,"SFG-05 FM firmware selected.",10,13,"$"
+SelMSXA:	db	10,13,"MSX Audio firmware selected.",10,13,"$"
+
+FlCrErr:        db	13,10,"Failed to create file!",13,10,"$"
+FlOpErr:	db	13,10,"Failed to open file!",13,10,"$"
+FlWrErr:        db	13,10,"Failed to write file!",13,10,"$"
+FlClErr:        db	13,10,"Failed to close file!",13,10,"$"
+FlRdErr:        db	13,10,"Failed to read file!",13,10,"$"
+FlErrName:	db	"Not found: $"
 ROMlarge:	db	13,10,"The ROM file is damaged or incorrect!",13,10,"$"
 Fllarge:	db	13,10,"Firmware's file is damaged or incorrect!",13,10,"$"
 Flzero:		db	13,10,"Firmware's file is empty!",13,10,"$"
@@ -2873,7 +2949,7 @@ strI:	dw	#8000
 ; Footer
 
 	db	0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
 	db	0,0,0
 
 ;------------------------------------------------------------------------------

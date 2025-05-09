@@ -1,7 +1,7 @@
 ;
 ; Carnivore2+ Cartridge's FlashROM Manager
-; Copyright (c) 2024 RBSC
-; Version 3.05
+; Copyright (c) 2025 RBSC
+; Version 3.10
 ;
 ; WARNING!!
 ; The program's code and data before must not go over #4000 and below #C000 addresses!
@@ -232,8 +232,10 @@ Ma01:
 	jr	z,ShowMap
 	cp	"4"
 	jp	z,DoReset
+	cp	"7"
+	jr	z,RamCfg
 	cp	"8"
-	jr	z,CardCfg
+	jp	z,CardCfg
 	cp	"9"
 	jp	z,UTIL
 	jr	Ma01
@@ -249,6 +251,136 @@ ShowMap:
 	print	ANIK_S
 	call	SymbIn
 	jp	MainM
+
+
+;**********************************************************************
+;* RAM/SRAM Configuration Menu
+;********************************************************************** 
+RamCfg:
+	xor	a
+	ld	(CURSF),a
+
+	print	UTIL_R			; print card configuration menu
+RamCfg1:
+	ld	a,1
+	ld	(CURSF),a
+
+	call	SymbIn
+
+	push	af
+	xor	a
+	ld	(CURSF),a
+	pop	af
+
+	cp	"1"
+	jp	z,RAM2Mapper
+	cp	"2"
+	jp	z,RAM2Shadow
+	cp	"3"
+	jp	z,RAMDefault
+	cp	"4"
+	jp	z,NoSRAM
+	cp	27
+	jp	z,MainM
+	cp	"0"
+	jp	z,MainM
+	jr	RamCfg1	
+
+
+; Disable FMPAC SRAM or MSX Audio SRAM
+NoSRAM:
+	ld	a,(ERMSlt)
+	ld	h,#40			; set 1 page
+	call	ENASLT
+
+	ld	a,%10000000		; enable SD interface, disable RAM substitution
+	ld	(CardMDR+#36),a
+
+	ld	a,%11111111		; enable maper ports FC/FD/FE/FF and port 3C, as well as RAM; enable expanded slot and all other devices
+	ld	(RSTINS),a		; patch registers for reset
+
+	ld	a,(CardMDR+#3A)
+	and	%11101011
+	or	%00010100		; Disable FMPAC SRAM or MSX Audio SRAM and MSX Audio ADPCM
+	ld	(CardMDR+#3A),a
+
+	print	ImRST			; print reset msg
+	ld	hl,RST2SPC
+	jp	DoReset1
+
+
+; Set 2MB RAM to mapper
+RAM2Mapper:
+	ld	a,(ERMSlt)
+	ld	h,#40			; set 1 page
+	call	ENASLT
+
+	ld	a,#38			; Disable shadow, set delayed config, BIOSes are in FlashROM
+	ld	(CardMDR),a
+
+	ld	a,%10000000		; enable SD interface, disable RAM substitution
+	ld	(CardMDR+#36),a
+
+	ld	a,%11111111		; enable mapper ports FC/FD/FE/FF and port 3C, as well as RAM; enable expanded slot and all other devices
+	ld	(RSTINS),a		; patch registers for reset
+
+	ld	a,(CardMDR+#3A)
+	and	%11101010
+	or	%00010101		; Set 2MB RAM for RAM, disable SRAM for FMPAC and MSX Audio and MSX Audio ADPCM
+	ld	(CardMDR+#3A),a
+
+	print	ImRST			; print reset msg
+	ld	hl,RST2SPC
+	jp	DoReset1
+
+
+; Set 2MB RAM to shadow
+RAM2Shadow:
+	ld	a,(ERMSlt)
+	ld	h,#40			; set 1 page
+	call	ENASLT
+
+	ld	a,#38			; Disable shadow, set delayed config, BIOSes are in FlashROM
+	ld	(CardMDR),a
+
+	ld	a,%10000000		; enable SD interface, disable RAM substitution
+	ld	(CardMDR+#36),a
+
+	ld	a,%10101011		; disable mapper ports FC/FD/FE/FF and port 3C, as well as RAM
+	ld	(RSTINS),a		; patch registers for reset
+
+	ld	a,(CardMDR+#3A)
+	and	%11101010
+	or	%00010101		; Set 2MB RAM for shadow RAM, disable SRAM for FMPAC and MSX Audio and MSX Audio ADPCM
+	ld	(CardMDR+#3A),a
+
+	print	ImRST			; print reset msg
+	ld	hl,RST2SPC
+	jp	DoReset1
+
+
+; Set default config (1MB+1MB)
+RAMDefault:
+	ld	a,(ERMSlt)
+	ld	h,#40			; set 1 page
+	call	ENASLT
+
+	ld	a,#38			; Disable shadow, set delayed config, BIOSes are in FlashROM
+	ld	(CardMDR),a
+
+	ld	a,%10000000		; enable SD interface, disable RAM substitution
+	ld	(CardMDR+#36),a
+
+	ld	a,%11111111		; enable mapper ports FC/FD/FE/FF and port 3C, as well as RAM; enable expanded slot and all devices
+	ld	(RSTINS),a		; patch registers for reset
+
+	ld	a,(CardMDR+#3A)
+	and	%11100000		; Set default config (1MB RAM + 1MB Shadow RAM), enable SRAM for FMPAC and MSX Audio and MSX Audio ADPCM
+	ld	(CardMDR+#3A),a
+
+	print	ImRST			; print reset msg
+	ld	hl,RST2SPC
+	jp	DoReset1
 
 
 ;**********************************************************************
@@ -290,13 +422,15 @@ EnableSD:
 	ld	h,#40			; set 1 page
 	call	ENASLT
 
-	ld	a,#20			; %00100000
-	ld	(CardMDR),a		; set immediate configuration change flag, registers at #4F80
+;	ld	a,#20			; %00100000
+;	ld	(CardMDR),a		; set immediate configuration change flag, registers at #4F80
+	ld	a,#38			; Disable shadow, set delayed config, BIOSes are in FlashROM
+	ld	(CardMDR),a
 
 	ld	a,%11000001		; enable SD instead of CF (default)
 	ld	(CardMDR+#36),a
-	print	ImRST			; print reset msg
 
+	print	ImRST			; print reset msg
 	jp	DoReset
 
 ; Enable CF
@@ -305,8 +439,10 @@ EnableCF:
 	ld	h,#40			; set 1 page
 	call	ENASLT
 
-	ld	a,#20			; %00100000
-	ld	(CardMDR),a		; set immediate configuration change flag, registers at #4F80
+;	ld	a,#20			; %00100000
+;	ld	(CardMDR),a		; set immediate configuration change flag, registers at #4F80
+	ld	a,#38			; Disable shadow, set delayed config, BIOSes are in FlashROM
+	ld	(CardMDR),a
 
 	ld	a,%00000001		; enable CF instead of SD
 	ld	(CardMDR+#36),a
@@ -320,14 +456,24 @@ EnBoth1:
 	ld	h,#40			; set 1 page
 	call	ENASLT
 
-	ld	a,#20			; %00100000
-	ld	(CardMDR),a		; set immediate configuration change flag, registers at #4F80
+	ld	a,#38			; Disable shadow, set delayed config, BIOSes are in FlashROM
+	ld	(CardMDR),a
+
+	ld	a,%10101011		; disable mapper ports FC/FD/FE/FF and port 3C, as well as RAM
+	ld	(RSTINS),a		; patch registers for reset
 
 	ld	a,%11000010		; enable CF + SD - RAM
 	ld	(CardMDR+#36),a
-	print	ImRST			; print reset msg
 
-	jp	DoReset
+	ld	a,(CardMDR+#3A)
+	and	%11101011
+	or	%00010100		; Disable FMPAC SRAM or MSX Audio SRAM and MSX Audio DAC
+	ld	(CardMDR+#3A),a
+
+	print	ImRST			; print reset msg
+	ld	hl,RST2SPC
+	jp	DoReset1
+
 
 ; Enable both w/o MUSIC
 EnBoth2:
@@ -335,14 +481,23 @@ EnBoth2:
 	ld	h,#40			; set 1 page
 	call	ENASLT
 
-	ld	a,#20			; %00100000
-	ld	(CardMDR),a		; set immediate configuration change flag, registers at #4F80
+	ld	a,#38			; Disable shadow, set delayed config, BIOSes are in FlashROM
+	ld	(CardMDR),a
+
+	ld	a,%11010111		; disable MUSIC module and its ports
+	ld	(RSTINS),a		; patch registers for reset
 
 	ld	a,%11000011		; enable CF + SD - MUSIC
 	ld	(CardMDR+#36),a
-	print	ImRST			; print reset msg
 
-	jp	DoReset
+	ld	a,(CardMDR+#3A)
+	and	%11101011
+	or	%00010100		; Disable FMPAC SRAM or MSX Audio SRAM and MSX Audio DAC
+	ld	(CardMDR+#3A),a
+
+	print	ImRST			; print reset msg
+	ld	hl,RST2SPC
+	jp	DoReset1
 
 
 ;
@@ -353,12 +508,12 @@ DoReset:
         ld      a,(ERMSlt)
         ld      h,#40
         call    ENASLT
-
+	ld	hl,RSTCFG
+DoReset1:
 	xor	a
 	ld	(AddrFR),a
 	ld	a,#38			; Defconfig
 	ld	(CardMDR),a
-	ld	hl,RSTCFG
 	ld	de,R1Mask
 	ld	bc,26
 	ldir
@@ -2768,6 +2923,8 @@ CHK_L1: ld	a,(de)
     	xor	c
     	jp	p,CHK_R1		; Jump if readed bit 7 = written bit 7
     	scf
+	ld	a,#F0
+	ld	(de),a			; Return FlashROM to command mode
 CHK_R1:	pop bc
 	ret	
 
@@ -3931,7 +4088,7 @@ IDE_INI1:
 	ld	(Record+3),a		; set length 2 bl #10000-#2FFFF
 
 	ld	hl,IDEFNam
-	jr	Ifop
+	jp	Ifop
 
 
 ; Write SD BIOS
@@ -3973,6 +4130,7 @@ MUSIC_INI:
 	jp	UTIL
 
 MUSIC_INI1:
+	print	MUSIC_W			; print warning for incompatible BIOS
 	print	MUSIC_I_S
 	call	QFYN
 
@@ -5298,6 +5456,13 @@ RSTCFG:
 	db	0,0,0,0,0,0
 	db	#FF,#30
 
+RST2SPC:
+	db	#F8,#50,#00,#85,#3F,#40
+	db	#F8,#70,#01,#8C,#3F,#60
+	db	#F8,#90,#02,#8C,#3F,#80
+	db	#F8,#B0,#03,#8C,#3F,#A0
+RSTINS:	db	#FF,#38
+
 CFG_TEMPL:
 	db	#00,#FF,00,00,"C"
 	db	"                              "
@@ -5368,9 +5533,21 @@ MAIN_S:	db	13,10
 	db	" 2 - Create new configuration entry",13,10
 	db	" 3 - Show FlashROM's block usage",13,10
 	db	" 4 - Restart the computer",13,10
+	db	" 7 - RAM/SRAM configuration menu",13,10
 	db	" 8 - SD/CF card configuration menu",13,10
 	db	" 9 - Service Menu",13,10
 	db	" 0 - Exit to MSX-DOS [ESC]",13,10,"$"
+
+UTIL_R:	db	13,10
+	db	"RAM/SRAM configuration menu",13,10
+	db	"---------------------------",13,10
+	db	" 1 - Use on-board 2MB of RAM for mapper",13,10
+	db	" 2 - Use on-board 2MB of RAM for Shadow RAM",13,10
+	db	" 3 - Set defaults (1MB RAM mapper + 1MB Shadow RAM)",13,10
+	db	" 4 - Disable FMPAC SRAM or MSX Audio SRAM",13,10
+	db	" 0 - Return to main menu [ESC]",13,10,13,10
+	db	" Selecting options 1-2 disables FMPAC or MSX Audio SRAM!",13,10
+	db	" Selecting options 1-4 will result in immediate reset!",13,10,"$"
 
 UTIL_C:	db	13,10
 	db	"Card Configuration Menu",13,10
@@ -5644,6 +5821,12 @@ SD_I_S:
 	db	10,13,"WARNING! SD BIOS will be overwritten! Proceed? (y/n) $"
 MUSIC_I_S:
 	db	10,13,"WARNING! MUSIC BIOS will be overwritten! Proceed? (y/n) $"
+MUSIC_W:
+	db	10,13
+	db	"This operation is not recommended unless your MUSIC BIOS is damaged or is",10,13
+	db	"incompatible with the current firmware. It is advised to use the C2FWUPD",10,13
+	db	"utility to flash the compatible MUSIC BIOS together with the firmware.",10,13
+	db	"Proceed at your own risk...",10,13,"$"
 Flash_C_S:
 	db	13,10,"Completed successfully!",13,10,"$"
 BootWrit:
@@ -5757,6 +5940,15 @@ SD_I_S:
 	db	10,13,"WARNING! Overwrite SD BIOS? (y/n) $"
 MUSIC_I_S:
 	db	10,13,"WARNING! Overwrite MUSIC BIOS? (y/n) $"
+MUSIC_W:
+	db	10,13
+	db	"This operation is not recommended unless",10,13
+	db	"your MUSIC BIOS is damaged or is",10,13
+	db	"incompatible with the current firmware.",10,13
+	db	"It's advised to use the C2FWUPD utility",10,13
+	db	"to flash the compatible MUSIC BIOS",10,13
+	db	"together with the firmware.",10,13
+	db	"Proceed at your own risk...",10,13,"$"
 Flash_C_S:
 	db	13,10,"Completed successfully!",13,10,"$"
 BootWrit:
@@ -5890,8 +6082,8 @@ I_MPAR_S:
 ;------------------ MODE 80 ------------------
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Manager v3.05",13,10
-	db	"(C) 2024 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ Manager v3.10",13,10
+	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
 Findcrt_S:
@@ -5942,8 +6134,8 @@ NO_B_UPD:
 ;------------------ MODE 40 ------------------
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Manager v3.05",13,10
-	db	"(C) 2024 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ Manager v3.10",13,10
+	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found.",10,13
 	db	"Please specify its slot number - $"
@@ -6235,5 +6427,5 @@ DetVDPE:
 ; Footer
 
 	db	0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23:2024"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
 	db	0,0,0
