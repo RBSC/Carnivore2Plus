@@ -37,7 +37,7 @@ firmwares and music module's BIOSes:
  - MSX Audio firmware and BIOS
 
 Later, more firmware versions may become available with additional features and
-sound card support.. Each firmware set consists of a BIN, CRC and ROM file.
+sound card support. Each firmware set consists of a BIN, CRC and ROM file.
 Please do not edit or delete any of those files!
 
 To start using the newly-uploaded firmware and BIOS please power off your computer

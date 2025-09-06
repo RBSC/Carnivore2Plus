@@ -1,7 +1,7 @@
 ;
 ; Carnivore2+ Cartridge's Firmware Updater
 ; Copyright (c) 2025 RBSC
-; Version 3.00
+; Version 3.01
 ;
 
 ; !COMPILATION OPTIONS!
@@ -257,6 +257,7 @@ MainM:
 	ld	(Fsadp),a
 	ld	(Fsadp+1),a
 	ld	(Fsadp+2),a
+	ld	(GithubMess),a
 
 ; #DEBUG	
 ;	ld	(VTEMP),sp
@@ -764,14 +765,28 @@ m00461:
 	print	ONE_NL_S
 	jp	MainM
 m0047:
+	xor	a
+	ld	(GithubMess),a		; reset flag
 	ld	de,(FCBC+16)		; crc file size
 	ld	a,d
 	or	a
 	jr	nz,m00471
 	ld	a,e
-	cp	50			; file larger than 50 bytes?
-	jr	nc,m00471
+	cp	27
+	jr	z,m0047a
+	cp	30
+	jr	z,m0047b
+	print	CheckCRCF_NOK		; CRC file damaged
+	ld	de,FCBC
+	ld	c,_FCLOSE		; Close file
+	call	DOS		
+;	print	ONE_NL_S
+	jp	MainM
 
+m0047a:
+	ld	a,1
+	ld	(GithubMess),a		; file is messed up by Github
+m0047b:
 	ld	a,#78
 	ld	(FWCRC),a
 	ld	a,#56
@@ -908,6 +923,25 @@ m0049:
 	call	DOS		
 
 	print	ONE_NL_S
+	ld	de,FW_Mark
+	ld	hl,FBUFFC
+	ld	b,15
+	ld	a,(GithubMess)		; file is messed up by Github?
+	or	a
+	jr	z,m00491
+	ld	de,FW_MarkAlt
+	ld	hl,FBUFFC
+	ld	b,14
+m00491:
+	ld	a,(de)
+	cp	(hl)			; match contents of CRC file before actual hash
+	jp	nz,m00494
+	inc	hl
+	inc	de
+	djnz	m00491
+	push 	hl
+	push	hl
+
 	print	CurrentCRC
 	ld	a,(FWCRC+3)
 	call	HEXOUT
@@ -918,19 +952,9 @@ m0049:
 	ld	a,(FWCRC)
 	call	HEXOUT			; output calculated CRC
 
-	ld	de,FW_Mark
-	ld	hl,FBUFFC
-	ld	b,15
-m00491:
-	ld	a,(de)
-	cp	(hl)			; match contents of CRC file before actual hash
-	jr	nz,m00493
-	inc	hl
-	inc	de
-	djnz	m00491
-
-	push	hl
+	print	ONE_NL_S
 	print	ExpectedCRC
+	pop	hl
 	ld	b,8
 m00491a:
 	ld	a,(hl)
@@ -938,8 +962,8 @@ m00491a:
 	inc	hl
 	djnz	m00491a
 	print	ONE_NL_S
-	pop	hl
 
+	pop	hl
 	ld	b,4
 	ld	de,FWCRC+3		; actual CRC
 m00492:
@@ -970,7 +994,10 @@ m00492:
 	print	CheckCRC_OK
 	jr	m00500
 m00493:
-	print	CheckCRC_NOK
+	print	CheckCRC_NOK		; print "crc match failed"
+	jp	MainM
+m00494:
+	print	CheckCRCFileFail	; print "bad crc file contents"
 	jp	MainM
 
 m00500:
@@ -2733,7 +2760,7 @@ DESCR:	db	"CMFCSDCF"		; "CMFCCFRC"
 
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Firmware Updater v3.00",13,10
+	db	"Carnivore2+ Firmware Updater v3.01",13,10
 	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
@@ -2817,10 +2844,14 @@ FlProgs:	db	13,10,"Uploading firmware to the cartridge..."
 CheckCRC:	db	13,10,"Verifying CRC of the firmware file, please wait...",13,10,"$"
 CheckCRC_OK:	db	"CRC matches. Proceeding with firmware update...",13,10,13,10,"$"
 CheckCRC_NOK:	db	13,10,"ERROR matching CRC! Firmware will not be updated...",13,10,"$"
+CheckCRCFileFail:
+		db	13,10,"ERROR verifying CRC file's headers! CRC file is damaged...",13,10,"$"
+CheckCRCF_NOK:	db	13,10,"ERROR reading CRC file! CRC file is damaged...",13,10,"$"
 FWCRC:		dd	0x12345678
 FW_Mark:	db	"FirmwareCRC",13,10,"0x",0
-CurrentCRC:	db	"Actual CRC of firmware: 0x$"
-ExpectedCRC:	db	13,10,"Expected CRC of firmware: 0x$"
+FW_MarkAlt:	db	"FirmwareCRC",10,"0x",0
+CurrentCRC:	db	"Actual CRC of firmware:   0x$"
+ExpectedCRC:	db	"Expected CRC of firmware: 0x$"
 
 unc_EPCS:	db	13,10,"ERROR: Unknown or too small EEPROM chip!",13,10
 		db	"The utility requires EPCS4 or larger EEPROM chip to proceed...",13,10,"$"
@@ -2943,6 +2974,8 @@ EBlock0:
 EBlock:	db	0
 strp:	db	0
 strI:	dw	#8000
+GithubMess:
+	db	0
 
 ;------------------------------------------------------------------------------
 
