@@ -1,0 +1,24 @@
+--------------------------------------------------------------------------------
+Carnivore2+ MultiFunctional Cartridge
+Copyright (c) 2025 RBSC
+--------------------------------------------------------------------------------
+
+The provided utilities allow to enable or disable the R800 mode on a Turbo-R MSX
+computer from MSX-DOS or Disk Basic.
+
+\r800.bin	- enables R800 mode on TurboR from Basic
+\r800.com	- enables R800 mode on TurboR from MSX-DOS
+\z80.bin	- disables R800 mode on TurboR from Basic
+\z80.com	- disables R800 mode on TurboR from MSX-DOS
+
+To run a BIN file from Disk Basic, copy it to a floppy disk and enter this command:
+
+bload"z80.bin",r
+
+In some cases there's a need to disable the R800 mode on Turbo-R computers in order
+to perform certain actions with Carnivore2+ cartridge. For example, the 3.01 firmware
+may not work correctly in the R800 mode, so to upgrade it there's a need to disable
+this mode before flashing a new firmware.
+
+These utilities output no messages, so please observe the R800 indicator on your
+Turbo-R machine's front panel.
