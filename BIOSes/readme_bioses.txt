@@ -1,6 +1,7 @@
 --------------------------------------------------------------------------------
 Carnivore2+ MultiFunctional Cartridge
 Copyright (c) 2025 RBSC
+Last updated: 12.11.2025
 --------------------------------------------------------------------------------
 
 The IDE, SDSC and MUSIC BIOS ROMs bear the copyrights of their respective creators/owners.
@@ -19,10 +20,10 @@ MSX Audio BIOS ROM is copyright by Richard Watts Computers Ltd and Music Sales L
 
 The following versions of BIOSes are available:
 
-\BIDECMFC.BIN	- Nextor 2.1.1 Release with IDE driver 0.1.7
+\BIDECMFC.BIN	- Nextor 2.1.3 Release with IDE driver 0.1.7
 \FMPCCMFC.BIN	- English FMPAC BIOS
 \FMPCCMFC.ALT	- Original (Japanese) FMPAC BIOS
-\SDSCCMFC.BIN	- Nextor 2.1.1 with SDSC driver 1.3
+\SDSCCMFC.BIN	- Nextor 2.1.3 with SDSC driver 1.3
 \SFGMCMFC.BIN	- Combined SFG BIOS
 \MSXACMFC.BIN	- MSX Audio BIOS
 
