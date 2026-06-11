@@ -11,11 +11,11 @@
 ;
 
 ; !COMPILATION OPTIONS!
-SPC	equ	1		; 1 = only basic characters are used for UI (for Arabic and Korean computers)
+SPC	equ	0		; 1 = only basic characters are used for UI (for Arabic and Korean computers)
 				; 0 = all characters are used for UI
 MUS	equ	1		; Music selction for the Boot Menu
 				; 1 = Stamper, 0 = Aurora
-TIT	equ	0		; Title selection
+TIT	equ	1		; Title selection
 				; 0 - text on MSX1, graphics on MSX2 and later
 				; 1 - always text
 

@@ -1,7 +1,7 @@
 ;
 ; Carnivore2+ Cartridge's FlashROM Editor
-; Copyright (c) 2025 RBSC
-; Version 3.07
+; Copyright (c) 2026 RBSC
+; Version 3.08
 ;
 ; WARNING!!
 ; The program's code and data before must not go over #4000 and below #C000 addresses!
@@ -6540,7 +6540,7 @@ CFG_TEMPL:
 	db	#F8,#70,#01,#8C,#3F,#60		
 	db      #F8,#90,#02,#8C,#3F,#80		
 	db	#F8,#B0,#03,#8C,#3F,#A0	
-	db	#00,#A8,#00,#01,#FF
+	db	#00,#B8,#00,#01,#FF
 
 
 CARTTAB: ; (N x 64 byte) 
@@ -6558,7 +6558,7 @@ CRTT1:	db	"k"
 	db	#F8,#60,#01,#84,#FF,#60				
 	db      #F8,#80,#02,#84,#FF,#80				
 	db	#F8,#A0,#03,#84,#FF,#A0			
-	db	#FF,#AC,#00,#02,#FF
+	db	#FF,#BC,#00,#02,#FF
 CRTT2:	db	"K"
 	db	"Konami 5 (Konami SCC)            $"
 	db	#F8,#50,#00,#84,#FF,#40			
@@ -6572,21 +6572,21 @@ CRTT3:	db	"a"
 	db	#F8,#68,#00,#84,#FF,#60				
 	db      #F8,#70,#00,#84,#FF,#80				
 	db	#F8,#78,#00,#84,#FF,#A0			
-	db	#FF,#AC,#00,#02,#FF
+	db	#FF,#BC,#00,#02,#FF
 CRTT4:	db	"A"
 	db	"ASCII 16                         $"		
 	db	#F8,#60,#00,#85,#FF,#40			
 	db	#F8,#70,#00,#85,#FF,#80				
 	db      #F8,#60,#00,#85,#FF,#C0				
 	db	#F8,#70,#00,#85,#FF,#00			
-	db	#FF,#8C,#00,#01,#FF
+	db	#FF,#9C,#00,#01,#FF
 CRTT5:	db	"M"
 	db	"Mini ROM (no mapper)             $"		
 	db	#F8,#60,#00,#06,#7F,#40			
 	db	#F8,#70,#01,#08,#7F,#80				
 	db      #F8,#70,#02,#08,#3F,#C0				
 	db	#F8,#78,#03,#08,#3F,#A0			
-	db	#FF,#8C,#07,#01,#FF
+	db	#FF,#9C,#07,#01,#FF
 	
 	db	0			; end of mapper table
 
@@ -7412,8 +7412,8 @@ I_MPAR_S:
 ;------------------ MODE 80 ------------------
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Multi-Cartridge Editor v3.07",13,10
-	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ Multi-Cartridge Editor v3.08",13,10
+	db	"(C) 2026 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
 Findcrt_S:
@@ -7459,8 +7459,8 @@ H_PAR_S:
 ;------------------ MODE 40 ------------------
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Multi-Cartridge",10,13,"Editor v3.07",13,10
-	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ Multi-Cartridge",10,13,"Editor v3.08",13,10
+	db	"(C) 2026 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found.",10,13
 	db	"Please specify its slot number - $"
@@ -7788,5 +7788,5 @@ HSOB	db	"ROM's starting options register",13,10
 EXIT_S:	db	10,13,"Thanks for using RBSC's products!",13,10,"$"
 
 	db	0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2026"
 	db	0,0,0

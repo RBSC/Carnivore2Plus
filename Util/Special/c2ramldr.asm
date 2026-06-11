@@ -1,7 +1,7 @@
 ;
 ; Carnivore2+ Cartridge's Shadow RAM Loader
-; Copyright (c) 2025 RBSC
-; Version 3.05
+; Copyright (c) 2026 RBSC
+; Version 3.06
 ;
 
 
@@ -4048,7 +4048,7 @@ CRTT1:	db	"k"
 	db	#F8,#60,#01,#A4,#FF,#60				
 	db      #F8,#80,#02,#A4,#FF,#80				
 	db	#F8,#A0,#03,#A4,#FF,#A0			
-	db	#FF,#AC,#00,#02,#FF
+	db	#FF,#BC,#00,#02,#FF
 CRTT2:	db	"K"
 	db	"Konami SCC (Konami 5)            $"
 	db	#F8,#50,#00,#A4,#FF,#40			
@@ -4062,21 +4062,21 @@ CRTT3:	db	"a"
 	db	#F8,#68,#00,#A4,#FF,#60				
 	db      #F8,#70,#00,#A4,#FF,#80				
 	db	#F8,#78,#00,#A4,#FF,#A0			
-	db	#FF,#AC,#00,#02,#FF
+	db	#FF,#BC,#00,#02,#FF
 CRTT4:	db	"A"
 	db	"ASCII 16                         $"		
 	db	#F8,#60,#00,#A5,#FF,#40			
 	db	#F8,#70,#00,#A5,#FF,#80				
 	db      #F8,#60,#00,#A5,#FF,#C0				
 	db	#F8,#70,#00,#A5,#FF,#00			
-	db	#FF,#8C,#00,#01,#FF
+	db	#FF,#9C,#00,#01,#FF
 CRTT5:	db	"M"
 	db	"Mini ROM (without mapper)        $"		
 	db	#F8,#60,#00,#26,#7F,#40			
 	db	#F8,#70,#01,#28,#7F,#80				
 	db      #F8,#70,#02,#28,#3F,#C0				
 	db	#F8,#78,#03,#28,#3F,#A0			
-	db	#FF,#8C,#07,#01,#FF
+	db	#FF,#9C,#07,#01,#FF
 	
 	db	0			; end of mapper table
 
@@ -4308,8 +4308,8 @@ TestRDT:
 
 PRESENT_S:
 	db	3
-	db	"Carnivore2+ Shadow RAM Loader v3.05",13,10
-	db	"(C) 2025 RBSC. All rights reserved",13,10,13,10,"$"
+	db	"Carnivore2+ Shadow RAM Loader v3.06",13,10
+	db	"(C) 2026 RBSC. All rights reserved",13,10,13,10,"$"
 NSFin_S:
 	db	"Carnivore2+ cartridge was not found. Please specify its slot number - $"
 Findcrt_S:
@@ -4381,7 +4381,7 @@ RCPData:
 	ds	30
 
 	db	0,0,0
-	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025"
+	db	"RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2026"
 	db	0,0,0
 
 BUFTOP:

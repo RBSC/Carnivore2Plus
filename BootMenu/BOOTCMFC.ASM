@@ -1,13 +1,13 @@
 ;
 ; Carnivore2+ Cartridge's Boot Menu
-; Copyright (c) 2025 RBSC
+; Copyright (c) 2026 RBSC
 ; Portions (c) Grauw
 ; Portions (c) Spark/SDM
 ; Portions (c) Jordon aka KOD/SDM
 ; Portions (c) Nyyrikki
 ; Portions (c) Dolphin_Soft
  
-; Version 3.05
+; Version 3.06
 ;
 
 ; !COMPILATION OPTIONS!
@@ -15,6 +15,10 @@ SPC	equ	0		; 1 = only basic characters are used for UI (for Arabic and Korean co
 				; 0 = all characters are used for UI
 MUS	equ	1		; Music selction for the Boot Menu
 				; 1 = Stamper, 0 = Aurora
+TIT	equ	0		; Title selection
+				; 0 - text on MSX1, graphics on MSX2 and later
+				; 1 - always text
+
 ; !COMPILATION OPTIONS!
 
 ; Variables
@@ -177,7 +181,7 @@ REGLORG	equ	MUSINIT+#05AB
 	db	0,0,0,0,0,0
 Label	db	"CMFCSDCF"
 	db	0
-BBVers	db	"v3.05"  ; Version | also update it in the header!
+BBVers	db	"v3.06"  ; Version | also update it in the header!
 	db	0
 
 
@@ -248,8 +252,11 @@ Title:
 	ld	hl,#015C
 	call	RDSLT		; read value
 	cp	#C3		; MSX2 or later?
+  if TIT=0
 	jr	nz,Title0
-
+  else
+	jr	Title0
+  endif
 	ld	a,(ERMSLT)
 	ld	h,#80
 	call	ENASLT		; Set slot 0000-3FFF to image data
@@ -10138,4 +10145,4 @@ Filler:
 ;	#0F - stop symbol
 ;
 
-;	RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2025
+;	RBSC:PTERO/WIERZBOWSKY/DJS3000/PYHESTY/GREYWOLF/SUPERMAX/VWARLOCK/TNT23/ALSPRU:2026
